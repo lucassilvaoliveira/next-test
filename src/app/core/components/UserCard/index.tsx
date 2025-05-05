@@ -3,13 +3,34 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate } from "../../helpers/date";
 import { UserCardType } from "./types";
+import { TrashIcon } from "lucide-react";
+import { deleteUserUseCase } from "../../usecases/deleteUser/DeleteUserUseCase";
+import { toast } from "sonner";
 
-export default function UserCard({ user, onClick }: UserCardType) {
+export default function UserCard({
+  user,
+  onClick,
+  onRemoveUser,
+  onAddUser,
+}: UserCardType) {
   const initials = user.name
     ?.split(" ")
     .map((e) => e[0])
     .join("")
     .toUpperCase();
+
+  async function deleteUser() {
+    onRemoveUser(user);
+
+    try {
+      await deleteUserUseCase({ userId: user.id! });
+    } catch (e) {
+      toast.error(
+        "Ops... algo deu errado ao excluir usuário, tente novamente mais tarde"
+      );
+      onAddUser(user);
+    }
+  }
 
   return (
     <Card
@@ -18,8 +39,16 @@ export default function UserCard({ user, onClick }: UserCardType) {
     >
       <CardHeader className="flex flex-row items-center gap-4">
         {initials}
-        <div>
+        <div className="flex justify-between w-full items-center">
           <CardTitle className="text-lg">{user.name}</CardTitle>
+          {/* Ícone de lixeira à direita do nome */}
+          <TrashIcon
+            className="h-5 w-5 text-red-500 cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation(); // Previne o evento de clicar no card
+              deleteUser();
+            }}
+          />
         </div>
       </CardHeader>
       <CardContent>
@@ -28,6 +57,9 @@ export default function UserCard({ user, onClick }: UserCardType) {
         </p>
         <p className="text-sm text-muted-foreground">
           Criado em: {formatDate(user.createdAt!)}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Atualizado em: {formatDate(user.updatedAt!)}
         </p>
       </CardContent>
     </Card>

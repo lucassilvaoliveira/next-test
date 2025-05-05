@@ -5,9 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { EditUserDialogType, UpdateUserFormType } from "./types";
-
 
 
 export default function EditUserDialog({ open, setOpen, onSubmit, defaultValues }: EditUserDialogType) {
@@ -16,11 +15,16 @@ export default function EditUserDialog({ open, setOpen, onSubmit, defaultValues 
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<UpdateUserFormType>({
     mode: "onChange",
     defaultValues,
   });
+
+  useEffect(() => {
+    reset(defaultValues)
+  }, [open])
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

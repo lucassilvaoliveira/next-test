@@ -12,10 +12,8 @@ import { useEffect, useState } from "react";
 import { decrypt, encrypt } from "../../helpers/crypto";
 import { updateUserUseCase } from "../../usecases/updateUser/UpdateUserUseCase";
 import { toast } from "sonner";
-import { useForm } from "react-hook-form";
 
 import { OrderUsersByTimeType, OrderUsersByType } from "../OrderControls/types";
-import { UpdateUserFormType } from "../EditUserDialog/types";
 import EditUserDialog from "../EditUserDialog";
 import UserCard from "../UserCard";
 import SortControls from "../OrderControls";
@@ -23,7 +21,6 @@ import SortControls from "../OrderControls";
 const ITEMS_PER_PAGE = 12;
 
 export default function ListUsers({ users }: ListUserProps) {
-  
   const [userList, setUserList] = useState(users);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -34,21 +31,6 @@ export default function ListUsers({ users }: ListUserProps) {
   useEffect(() => {
     setUserList((prev) => sortUserList(prev, orderBy, orderByTime));
   }, [orderBy, orderByTime]);
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<UpdateUserFormType>({
-    mode: "onChange",
-    defaultValues: {
-      userId: "",
-      name: "",
-      email: "",
-      password: "",
-    },
-  });
 
   const totalPages = Math.ceil(userList.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -87,18 +69,20 @@ export default function ListUsers({ users }: ListUserProps) {
     });
   }
 
+  function handleAddUser(user: User) {
+    setUserList(prev => [user, ...prev]);
+  }
+
+  function handleRemoveUser(user: User) {
+    setUserList(prev => prev.filter(e => e.id != user.id))
+  }
+
   function handlePageChange(page: number) {
     setCurrentPage(page);
   }
 
   function handleCardClick(user: User) {
     setSelectedUser(user);
-    reset({
-      userId: user.id,
-      name: user.name ?? "",
-      email: user.email ?? "",
-      password: user.password ? decrypt(user.password) : "",
-    });
     setOpen(true);
   }
 
@@ -152,6 +136,7 @@ export default function ListUsers({ users }: ListUserProps) {
         setOrderBy={setOrderBy}
         orderByTime={orderByTime}
         setOrderByTime={setOrderByTime}
+        handleAddUser={handleAddUser}
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl w-full">
@@ -163,7 +148,13 @@ export default function ListUsers({ users }: ListUserProps) {
           </Card>
         ) : (
           paginatedUsers.map((user) => (
-            <UserCard key={user.id} user={user} onClick={() => handleCardClick(user)} />
+            <UserCard
+              key={user.id}
+              user={user}
+              onClick={() => handleCardClick(user)}
+              onRemoveUser={(user) => handleRemoveUser(user)}
+              onAddUser={handleAddUser}
+            />
           ))
         )}
       </div>
@@ -194,7 +185,9 @@ export default function ListUsers({ users }: ListUserProps) {
             userId: selectedUser.id!,
             name: selectedUser.name ?? "",
             email: selectedUser.email ?? "",
-            password: selectedUser.password ? decrypt(selectedUser.password) : "",
+            password: selectedUser.password
+              ? decrypt(selectedUser.password)
+              : "",
           }}
         />
       )}
